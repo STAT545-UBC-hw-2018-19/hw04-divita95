@@ -1,0 +1,297 @@
+---
+title: "Homework04 - Tidy Data and Joins"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+
+
+#### Data set used: Gapminder Dataset
+
+
+
+
+#### Loading packages
+
+
+```{r}
+library(gapminder)
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(kableExtra)
+library(knitr)
+```
+
+
+
+
+
+#### **Tasks required for this assignment:**
+
+1. Pick one of the data reshaping prompts and do it.
+2. Pick one of the join prompts and do it.
+
+
+
+#### **Data Reshaping prompts**
+
+
+Selecting **Activity#2**
+
+`Activity #`: Make a tibble with one row per year and columns for life expectancy for two or more countries. Use knitr::kable() to make this table look pretty in your rendered homework. Take advantage of this new data shape to scatterplot life expectancy for one country against that of another.
+
+
+
+Tidy data is data that’s easy to work with: it’s easy to munge (with dplyr), visualise (with ggplot2 or ggvis) and model (with R’s hundreds of modelling packages). The two most important properties of tidy data are:
+
+
+- Each column is a variable.
+
+- Each row is an observation.
+
+This prompt enables us to `convert the gapminder untiday data to tidy data`.
+
+
+
+
+**Looking into the untidy gapminder data frame**
+
+
+
+
+```{r}
+head(gapminder) %>% 
+  knitr::kable(format = "markdown") %>% 
+    kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+
+
+`Next`, we convert this undity data into tidy data by using `gather()` and `spread()` function from `tidyr`. To perform this operation, we select the following two `Asian Countries` viz ` Afghanistan, China and India`.
+
+
+
+```{r}
+tidy_gap <- gapminder %>% 
+  filter(country == "Afghanistan"| country == "China"| country == "India") %>% 
+  select(year, country, lifeExp) %>% 
+  #rename(NewZealand = "New_Zealand") %>% 
+  spread(key = "country", value = "lifeExp") 
+
+kable(tidy_gap, format = "markdown") %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+  
+
+```
+
+
+
+
+**Using the above clean `tidy_gap` data lets visualise the change in lifeExp over the yeats for these two countries**
+
+
+
+```{r}
+
+
+  ggplot(tidy_gap) +
+  geom_line(aes(year, Afghanistan), color = "red") +
+  geom_smooth(aes(year, Afghanistan), color = "red") +
+  geom_line(aes(year, China), color = "blue") +
+  geom_smooth(aes(year, China), color = "blue") +
+  geom_line(aes(year, India), color = "green") +
+  geom_smooth(aes(year, India), color = "green")+
+  labs(title = "LifeExp of Afghanistan, China and India over the years") +
+  ylab("LifeExp")
+  
+  
+  
+  
+```
+
+
+
+
+As we can see from the above figure that the lifeExp for both India and Afghanistan have been increasing first at a slower rate and then at a faster rate. On the other hand, the lifeExp of China has seen ups and downs over the year, even though, its average lifeExp is highest.
+
+
+
+
+#### **Join Prompts(Join, merge, lookup)
+
+
+
+
+`**Activity#1**`
+
+Create a second data frame, complementary to Gapminder. Join this with (part of) Gapminder using a dplyr join function and make some observations about the process and result. Explore the different types of joins. Examples of a second data frame you could build:
+
+- One row per country, a country variable and one or more variables with extra info, such as language spoken, NATO membership, national animal, or capitol city.
+
+- One row per continent, a continent variable and one or more variables with extra info, such as northern versus southern hemisphere.
+
+
+In this task, I created a tibble of three variables named `country, pop and capital_city` using the `tibble()` function. The data frame created was stored in a variable called `new_data`.
+
+
+
+
+
+
+```{r}
+new_data<- tibble(country = c("Afghanistan", "India", "China", "Australia", "New Zealand"), pop = c("36183003", "134000000", "140000000", "25000000", "4609755"), capital_city = c("Kabul", "Delhi", "Beijing", "Canberra", "Wellington") )
+
+kable(new_data, format= "markdown") %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+**Exploring the data frame `new_data`**
+
+
+
+```{r}
+colnames(new_data)
+class(new_data)
+typeof(new_data)
+dim(new_data)
+```
+
+
+Lets perform combining, filtering and binding operations on the two data frames: `gapminder and new_data`
+
+
+
+
+##### **Left Join**
+
+
+
+
+```{r}
+kable(head(left_join(gapminder,new_data,by = "country")), format = "markdown") %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+
+```
+
+
+
+
+We can see that left joins retains the entire gapminder data frame and adds the column variables of the new_data data frame onto that by matching countries. The output below shows that all those countries which have no matching country in the new_data data frame have the new variables as `NA`.
+
+
+
+
+
+```{r}
+kable(tail(left_join(gapminder,new_data,by = "country")), format = "markdown") %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+
+##### **Right Join**
+
+
+```{r}
+kable(head((right_join(gapminder,new_data,by = "country")), format = "markdown")) 
+```
+
+
+
+
+Right_join retains the new_data frame and matches the gapminder data frame with the new_data by matching columns. Also, similar to left_join, the countries which have not match have no variable in the right_join data frame.
+
+
+
+
+```{r}
+kable(tail(right_join(gapminder,new_data,by = "country")), format = "markdown") %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+##### **Inner Join**
+
+
+
+Inner_join matches the two data frames based only on same rows and discards all the other rows.
+
+
+
+```{r}
+kable(head((inner_join(gapminder,new_data,by = "country")), format = "markdown")) %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+
+
+##### **Full Join**
+
+
+
+Full join is basically like a union and joins all the matching and non-matching rows.
+
+
+
+
+```{r}
+kable(head((full_join(gapminder,new_data,by = "country")), format = "markdown")) %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+As, we can see that, all the rows that have no matching variables in the new_data data frame was no value in the full_join data set.
+
+
+
+##### **Semi join
+
+
+
+This join joins the rows that have match in both the data frames.
+
+
+
+
+```{r}
+kable(tail((semi_join(gapminder,new_data,by = "country")), format = "markdown")) %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+
+##### **Anti join**
+
+
+
+This join joins all the rows that do no match in both the data frames.
+
+
+
+```{r}
+kable(tail((anti_join(gapminder,new_data,by = "country")), format = "markdown")) %>% 
+  kable_styling(bootstrap_options = "bordered",latex_options = "basic",full_width = F)
+```
+
+
+
+We see that all the continents except Asia and Oceania have no match in both the data frames, therefore, anti_join set has all the continents and there respective countries except these two.
